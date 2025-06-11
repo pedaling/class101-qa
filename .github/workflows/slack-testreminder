@@ -1,4 +1,4 @@
-name: Slack test
+name: Slack Test Reminder
 
 on:
   workflow_dispatch:
