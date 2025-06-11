@@ -1,0 +1,33 @@
+name: Slack App Release Reminder
+
+on:
+  schedule:
+    - cron: '0 1 * * 5' # 매주 금요일 10AM KST (UTC 1AM)
+  workflow_dispatch: # 수동 실행도 가능
+
+jobs:
+  notify-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if it's a release week (every 4 weeks)
+        id: check
+        run: |
+          WEEK_NUM=$(date +%U)  # 1년 중 몇 번째 주인지 (00~53)
+          REMAINDER=$(( WEEK_NUM % 4 ))
+          if [ "$REMAINDER" -eq 0 ]; then
+            echo "is_release_week=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release_week=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        if: steps.check.outputs.is_release_week == 'true'
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "channel": "${{ secrets.SLACK_CHANNEL }}",
+              "text": "✅ 이번 릴리즈 주간이 끝났습니다.\n📅 다음 릴리즈는 *4주 뒤*입니다. 일정에 참고해주세요!"
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
